@@ -1,0 +1,15 @@
+{
+  "sender_email": "kitto@localhost",
+  "files": [
+    {
+      "filename" : "devstore.jks",
+      "password" : "Vm0wd2QyUXlWa2hWV0doVVYwZG9XRll3Wkc5V1JsbDNXa1JTVjFKc2JETlhhMk0xVmpGYWMySkVUbGhoTVVwVVZqQmFTMlJIVmtWUmJVWlhWbXhzTTFadGNFdFRNVWw1VTJ0V1ZXSklRbGhXYlhoM1ZWWmtWMVp0UmxSTmF6RTBWakkxUjFaWFNraFZhemxhVmpOb2FGcFdXbXRXTVhCRlZXeHdWMDFWY0VwV2JURXdZekpHYzFOdVVsWmhlbXhoV1d4b2IxUkdiSEZTYlVacVRWWndNRlZ0ZUd0VWJGcDFVV3hvVjFKc2NGaFdha3BIVTBaYWRWSnNTbGRTTTAwMQ==",
+      "private_keys" : [
+        { 
+          "alias": "dev", 
+          "password": "Vm0wd2QyUXlWa2hWV0doVVYwZG9XRll3Wkc5V1JsbDNXa1JTVjFKc2JETlhhMk0xVmpGYWMySkVUbGhoTVVwVVZqQmFTMlJIVmtWUmJVWlhWbXhzTTFadGNFdFRNVWw1VTJ0V1ZXSklRbGhXYlhoM1ZWWmtWMVp0UmxSTmF6RTBWakkxUjFaWFNraFZhemxhVmpOb2FGcFdXbXRXTVhCRlZXeHdWMDFWY0VwV2JURXdZekpHYzFOdVVsWmhlbXhoV1d4b2IxUkdiSEZTYlVacVRWWndNRlZ0ZUd0VWJGcDFVV3hvVjFKc2NGaFdha3BIVTBaYWRWSnNTbGRTTTAwMQ==" 
+        }
+      ]
+    }
+  ]
+}
