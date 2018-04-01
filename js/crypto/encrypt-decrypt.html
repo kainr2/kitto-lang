@@ -1,0 +1,125 @@
+<html>
+<head>
+<meta charset="utf-8"/>
+<script type="text/javascript" src="jquery-3.1.1.js"></script>
+<script type="text/javascript" src="core.js"></script>
+<script type="text/javascript" src="sha-1.js"></script>
+<script type="text/javascript" src="sha-256.js"></script>
+<script type="text/javascript" src="aes.js"></script>
+<script type="text/javascript" src="enc-base64.js"></script>
+<script type="text/javascript" src="enc-utf16.js"></script>
+</head>
+<body>
+</body>
+</html>
+
+<script type="text/javascript">
+// https://github.com/diafygi/webcrypto-examples
+// http://qnimate.com/passphrase-based-encryption-using-web-cryptography-api/
+
+console.log("-------------------------------");
+var algo = "AES-CBC";
+var password = "12345";
+var initVector = window.crypto.getRandomValues(new Uint8Array(16));
+var key = null;
+
+var encryptedStr = null;
+
+// https://developers.google.com/web/updates/2012/06/How-to-convert-ArrayBuffer-to-and-from-String
+function ab2str(buf) {
+  return String.fromCharCode.apply(null, new Uint16Array(buf));
+}
+
+function str2ab(str) {
+  var buf = new ArrayBuffer(str.length*2); // 2 bytes for each char
+  var bufView = new Uint16Array(buf);
+  for (var i=0, strLen=str.length; i < strLen; i++) {
+    bufView[i] = str.charCodeAt(i);
+  }
+  return buf;
+}
+
+// http://stackoverflow.com/questions/9267899/arraybuffer-to-base64-encoded-string
+function ab2base64(buf) {
+  return btoa(String.fromCharCode.apply(null, new Uint8Array(buf)));
+}
+
+function base642ab(base64str) {
+  var binary_string = atob(base64str);
+  var len = binary_string.length;
+    var bytes = new Uint8Array( len );
+    for (var i = 0; i < len; i++)        {
+        bytes[i] = binary_string.charCodeAt(i);
+    }
+    return bytes.buffer;
+}
+
+function encrypt(message, password, callback)
+{
+  var crypto = window.crypto.subtle;
+  crypto.digest(
+    {name: "SHA-256"},
+    str2ab(password)
+  ).then(function(result) {
+    return crypto.importKey(
+      "raw", 
+      result,
+      { "name": algo }, 
+      false, 
+      ["encrypt", "decrypt"]);
+  }).then(function(cryptoKey) {
+    console.log("let's encrypt");
+    key = cryptoKey;
+    return crypto.encrypt(
+      { name: algo, iv: initVector },
+      cryptoKey,
+      str2ab(message)
+    );
+  }).then(function(encrypted) {
+    //returns an ArrayBuffer containing the encrypted data
+    encryptedStr = encrypted;
+    console.log(ab2base64(encrypted));
+    callback(ab2base64(encrypted));
+  }).catch(function(err) {
+    console.error(err);
+  });
+}
+
+function decrypt(base64str)
+{
+  var crypto = window.crypto.subtle;
+  crypto.decrypt(
+    { name: algo, iv: initVector },
+    key,
+    base642ab(base64str)
+  ).then(function(decrypted) {
+    //returns an ArrayBuffer containing the decrypted data
+    console.log(ab2str(decrypted));
+    cryptoJsDecrypt(base64str);
+  }).catch(function(err) {
+    console.error(err);
+  });
+}
+
+function cryptoJsDecrypt(encrypted)
+{
+  // http://stackoverflow.com/questions/29512858/cryptojs-and-key-iv-length
+  // http://stackoverflow.com/questions/20519166/cant-decrypt-string-with-cryptojs
+  //var encrypted = CryptoJS.AES.encrypt("Message", "Secret Passphrase"); 
+  mykey = key;
+  myiv = CryptoJS.enc.Base64.parse(ab2base64(initVector));
+  var decrypted = CryptoJS.AES.decrypt(encrypted, key, 
+  	{ "iv": initVector, "mode": CryptoJS.mode.CBC, "padding": CryptoJS.pad.Pkcs7 }); 
+
+  
+}
+
+
+encrypt(password, password, decrypt);
+
+
+
+
+
+
+</script>

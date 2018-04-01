@@ -1,0 +1,299 @@
+<html>
+<head>
+<meta charset="utf-8"/>
+ 
+ 
+</head>
+<body>
+<p id="p1">
+Hello world:
+</p>
+</body>
+</html>
+<script type="text/javascript">
+console.log("-------------------------------------------------");
+//var sk = Cryptography.generateSk();
+ 
+ 
+/// **** NOTE: must be doing it in Uint8 **** ///
+// http://stackoverflow.com/questions/6965107/converting-between-strings-and-arraybuffers
+function str2ab(str) {
+  var buf = new ArrayBuffer(str.length*2); // 2 bytes for each char
+  var bufView = new Uint16Array(buf);
+  for (var i=0, strLen=str.length; i<strLen; i++) {
+    bufView[i] = str.charCodeAt(i);
+  }
+  return buf;
+}
+function ab2str(buf) {
+  return String.fromCharCode.apply(null, new Uint16Array(buf));
+}
+/// ***************************************** ///
+ 
+ 
+ 
+ 
+// * http://stackoverflow.com/a/18722848/1828442
+function utf8AbFromStr(str) {
+    var strUtf8 = unescape(encodeURIComponent(str));
+    var ab = new Uint8Array(strUtf8.length);
+    for (var i = 0; i < strUtf8.length; i++) {
+        ab[i] = strUtf8.charCodeAt(i);
+    }
+    return ab;
+}
+ 
+function strFromUtf8Ab(arrayBuffer) {
+  return decodeURIComponent(escape(String.fromCharCode.apply(null, arrayBuffer)));
+}
+ 
+ 
+ 
+// http://stackoverflow.com/questions/9267899/arraybuffer-to-base64-encoded-string
+function ab2base64(buf) {
+  return btoa(String.fromCharCode.apply(null, new Uint8Array(buf)));
+}
+ 
+function base642ab(base64) {
+    var binary_string = window.atob(base64);
+    var len = binary_string.length;
+    var bytes = new Uint8Array( len );
+    for (var i = 0; i < len; i++)        {
+        bytes[i] = binary_string.charCodeAt(i);
+    }
+    return bytes.buffer;
+}
+ 
+// http://stackoverflow.com/questions/34309988/byte-array-to-hex-string-conversion-in-javascript
+function toHexString(byteArray) {
+  return byteArray.map(function(byte) {
+    return ('0' + (byte & 0xFF).toString(16)).slice(-2);
+  }).join('')
+}
+ 
+ 
+function toUTF8Array(str) {
+    var utf8= unescape(encodeURIComponent(str));
+    var arr= new Array(utf8.length);
+    for (var i= 0; i<utf8.length; i++)
+        arr[i]= utf8.charCodeAt(i);
+    return arr;
+}
+ 
+ 
+ 
+function writeDecrypt(obj)
+{
+    if (obj instanceof Error)
+    {
+        console.error("[FAILED] " + obj);
+        return;
+    }
+ 
+    console.log("decrypted value: " + obj);
+}
+ 
+ 
+function convertStringToArrayBufferView(str)
+{
+    var bytes = new Uint8Array(str.length);
+    for (var iii = 0; iii < str.length; iii++)
+    {
+        bytes[iii] = str.charCodeAt(iii);
+    }
+ 
+    return bytes;
+}
+ 
+function convertArrayBufferViewtoString(buffer)
+{
+    var str = "";
+    for (var iii = 0; iii < buffer.byteLength; iii++)
+    {
+        str += String.fromCharCode(buffer[iii]);
+    }
+ 
+    return str;
+}
+ 
+ 
+var crypto = Cryptography.getBrowserCrypto();
+//var password = Cryptography.utf8StringToUint8Array(Cryptography.stringToUtf8String("password"));
+var password = "password";
+var passwordAb  = str2ab(password);
+ 
+var bKey = null;
+var cKey = null;
+ 
+var sk = crypto.getRandomValues(new Uint8Array(16));  
+var bVector = sk;
+var cVector = ab2base64(sk);
+ 
+ 
+//var sk = Cryptography.generateSk();
+//var bVector = Cryptography.utf8StringToUint8Array(Cryptography.stringToUtf8String(sk));
+//var cVector = ab2str(bVector);
+console.log("bVector: " + bVector + "; length = " + sk.length);
+console.log("cVector: " + cVector + "; length = " + cVector.length);
+ 
+var data  = "narayan prusty";
+var encrypted_data = null;
+ 
+function import_key(callback)
+{
+    window.crypto.subtle.importKey(
+        "raw",
+        passwordAb,
+        {name: "AES-CBC"},
+        true,
+        ["encrypt", "decrypt"]
+    ).then(function(mykey) {
+        bKey = mykey;
+        return crypto.subtle.exportKey("raw", bKey);
+    }).then(function(keydata) {
+        cKey = ab2str(keydata); // keydata {ArrayBuffer}
+        console.log("Keydata: " + cKey);
+        callback(bKey, bVector);
+    }, function(err) {
+        console.error(err);
+    });
+}
+ 
+ 
+//import_key(encrypt_data);
+ 
+ 
+function encrypt_data(cryptoKey, vector)
+{
+    crypto.subtle.encrypt(
+        {name: "AES-CBC", iv: vector},
+        cryptoKey,
+        convertStringToArrayBufferView(data)
+  ).then(function(result) {
+    encrypted_data = new Uint8Array(result);
+    console.log("Encrypted: " + ab2base64(result));
+ 
+    // decrypt data
+    decrypt_data(cryptoKey, vector);
+ 
+ 
+    // cryptojs
+    // https://github.com/brix/crypto-js/tree/3.1.8
+    //var CryptoJS = require("crypto-js");
+    var ciphertext = CryptoJS.AES.encrypt(data, "password", cKey, {iv: cVector,mode: CryptoJS.mode.CBC,padding: CryptoJS.pad.Pkcs7});
+    console.log("[cyrptojs:encrypt] " + ciphertext.toString());
+ 
+    // var bytes  = CryptoJS.AES.decrypt(ciphertext.toString(), "password", cKey, {iv: cVector});
+    // var plaintext = bytes.toString(CryptoJS.enc.Utf8);
+    // console.log("[cyrptojs:decrypt] " + plaintext);
+ 
+    var bytes  = CryptoJS.AES.decrypt(ab2base64(result), cKey, {iv: cVector});
+    var plaintext = bytes.toString(CryptoJS.enc.Utf8);
+    console.log("[cyrptojs:decrypt] " + plaintext);
+ 
+  }, function(e) {
+      console.log(e);
+  });
+}      
+ 
+var decrypted_data = null;
+function decrypt_data(cryptoKey, vector)
+{
+    // crypto.subtle.digest(
+    //  {name: "SHA-256"},
+    //  convertStringToArrayBufferView(password)
+    // ).then(function(result){
+    //     return window.crypto.subtle.importKey("raw", result, {name: "AES-CBC"}, false, ["encrypt", "decrypt"]);
+    // }
+ 
+    crypto.subtle.decrypt(
+        {name: "AES-CBC", iv: vector},
+        cryptoKey,
+        encrypted_data
+    ).then(function(result) {
+        decrypted_data = new Uint8Array(result);
+        console.log("Decrypted: " + convertArrayBufferViewtoString(decrypted_data));
+    }, function(e){
+        console.log(e);
+    });
+}
+ 
+ 
+ 
+ 
+ 
+function generate_key(callback)
+{
+  window.crypto.subtle.generateKey(
+    {name: "AES-CBC", length: 256}, // Algorithm the key will be used with
+    true,                           // Can extract key value to binary string
+    ["encrypt", "decrypt"]          // Use for these operations
+  ).then(function(mykey) {
+    bKey = mykey;
+    return crypto.subtle.exportKey("raw", bKey);
+  }).then(function(keydata) {
+    cKey = ab2base64(keydata); // keydata {ArrayBuffer}
+ 
+    var key = CryptoJS.enc.Base64.parse(cKey);
+    var iv = CryptoJS.enc.Base64.parse(cVector);
+    console.log("test key: " + key.toString(CryptoJS.enc.Base64) + "; length = " + key.toString(CryptoJS.enc.Base64).length);
+    console.log("test iv: " + iv.toString(CryptoJS.enc.Base64) + "; length = " + iv.toString(CryptoJS.enc.Base64).length);
+ 
+    var message = 'testest'
+    var encrypted =  CryptoJS.AES.encrypt(message, key, { 'iv': iv });
+    var encryptedBase64 = encrypted.toString();
+    console.log("test <encrypt>: " + encryptedBase64);
+ 
+    var decrypted = CryptoJS.AES.decrypt(encryptedBase64, key, { 'iv': iv });
+    console.log("test <decrypt>: " + decrypted.toString(CryptoJS.enc.Utf8));
+ 
+    crypto.subtle.decrypt(
+      {name: "AES-CBC", iv: bVector},
+      bKey,
+      base642ab(encryptedBase64)
+    ).then(function(result) {
+      decrypted_data = new Uint8Array(result);
+      console.log("test -> browser <decrypted>: " + convertArrayBufferViewtoString(decrypted_data));
+    }, function(e){
+      console.log(e);
+    });
+ 
+ 
+    //var uint8array = new TextEncoder(encoding).encode(string);
+    //var string = new TextDecoder(encoding).decode(uint8array);
+    // var msgInAb = new TextEncoder("utf-8").encode(message);
+    var msgInAb = utf8AbFromStr(message);
+ 
+ 
+    crypto.subtle.encrypt(
+      {name: "AES-CBC", iv: bVector},
+      bKey,
+      msgInAb
+    ).then(function(result) {
+      encrypted_data = new Uint8Array(result);
+      console.log("browser <encrypted>: " + ab2base64(result));
+ 
+      var decrypted = CryptoJS.AES.decrypt(
+        ab2base64(result),
+        CryptoJS.enc.Base64.parse(cKey),
+        { 'iv': CryptoJS.enc.Base64.parse(cVector) });
+      console.log("browser -> test <decrypted>: " + decrypted.toString(CryptoJS.enc.Utf8));
+ 
+    }, function(e){
+      console.log(e);
+    });
+ 
+ 
+ 
+  }, function(err) {
+    console.error(err);
+  });
+}
+ 
+ 
+generate_key();
+ 
+ 
+ 
+ 
+</script>
